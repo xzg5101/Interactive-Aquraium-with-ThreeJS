@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { random_color } from "./utils";
+import { update_object_position } from "./utils";
 export class Fish {
   constructor(length, color) {
     const d1 = new Date();
@@ -132,164 +133,17 @@ export class Fish {
   }
 
   update_position(tank_dim, fish_list, mouse) {
-    //refect on walls
-    //console.log(this.fish.position);
-    if (
-      this.fish.position.x > tank_dim.max_x - this.radius ||
-      this.fish.position.x < tank_dim.min_x + this.radius
-    ) {
-      this.face.reflect(new THREE.Vector3(1, 0, 0));
-    }
-
-    if (
-      this.fish.position.y > tank_dim.max_y - this.radius ||
-      this.fish.position.y < tank_dim.min_y + this.radius
-    ) {
-      this.face.reflect(new THREE.Vector3(0, 1, 0));
-    }
-
-    if (
-      this.fish.position.z > tank_dim.max_z - this.radius ||
-      this.fish.position.z < tank_dim.min_z + this.radius
-    ) {
-      this.face.reflect(new THREE.Vector3(0, 0, 1));
-    }
-
-    // potential from the wall
-    const min_dim = Math.min(tank_dim.max_x, tank_dim.max_y, tank_dim.max_z);
-    const wall_factor = 0.5;
-    const wall_border_ratio = 0.7;
-    const wall_border = wall_border_ratio * min_dim;
-    const epsilon = 0.0000001;
-    const x_max_dist = tank_dim.max_x - this.fish.position.x;
-    const x_min_dist = this.fish.position.x - tank_dim.min_x;
-    const y_max_dist = tank_dim.max_y - this.fish.position.y;
-    const y_min_dist = this.fish.position.y - tank_dim.min_y;
-    const z_max_dist = tank_dim.max_z - this.fish.position.z;
-    const z_min_dist = this.fish.position.z - tank_dim.min_z;
-
-    if (x_max_dist < wall_border) {
-      this.face.add(
-        new THREE.Vector3(-1, 0, 0).multiplyScalar(
-          (1 / (x_max_dist + epsilon)) * wall_factor
-        )
-      );
-    } else if (x_min_dist < wall_border) {
-      this.face.add(
-        new THREE.Vector3(1, 0, 0).multiplyScalar(
-          (1 / (x_min_dist + epsilon)) * wall_factor
-        )
-      );
-    }
-
-    if (y_max_dist < wall_border) {
-      this.face.add(
-        new THREE.Vector3(0, -1, 0).multiplyScalar(
-          (1 / (y_max_dist + epsilon)) * wall_factor
-        )
-      );
-    } else if (y_min_dist < wall_border) {
-      this.face.add(
-        new THREE.Vector3(0, 1, 0).multiplyScalar(
-          (1 / (y_min_dist + epsilon)) * wall_factor
-        )
-      );
-    }
-
-    if (z_max_dist < wall_border) {
-      this.face.add(
-        new THREE.Vector3(0, 0, -1).multiplyScalar(
-          (1 / (z_max_dist + epsilon)) * wall_factor
-        )
-      );
-    } else if (z_min_dist < wall_border) {
-      this.face.add(
-        new THREE.Vector3(0, 0, 1).multiplyScalar(
-          (1 / (z_min_dist + epsilon)) * wall_factor
-        )
-      );
-    }
-
-    //peer collision and flocking
-    const hard_col_factor = 1;
-    const flock_inner_bound = this.length * 2;
-    const flock_outer_bound = this.length * 5;
-    const flock_repel_factor = 0.00001;
-    const flocking_gather_factor = 0.001;
-    const direction_factor = 0.001;
-    for (let i = 0; i < fish_list.length; i++) {
-      if (fish_list[i].id != this.id) {
-        //direct collision
-        if (
-          this.fish.position.distanceTo(fish_list[i].fish.position) <
-          this.radius
-        ) {
-          const col_direct = this.fish.position
-            .clone()
-            .sub(fish_list[i].fish.position);
-          this.face.add(
-            col_direct
-              .normalize()
-              .multiplyScalar(
-                hard_col_factor *
-                  (1 /
-                    (this.fish.position.distanceTo(fish_list[i].fish.position) +
-                      epsilon))
-              )
-          );
-        }
-        //flocking
-        else if (
-          this.fish.position.distanceTo(fish_list[i].fish.position) >
-          flock_outer_bound
-        ) {
-          //console.log("too far");
-          const flock_direct = fish_list[i].fish.position
-            .clone()
-            .sub(this.fish.position);
-          this.face.add(flock_direct.multiplyScalar(flocking_gather_factor));
-        } else if (
-          this.fish.position.distanceTo(fish_list[i].fish.position) <
-          flock_inner_bound
-        ) {
-          //console.log("too close");
-          const flock_direct = this.fish.position
-            .clone()
-            .sub(fish_list[i].fish.position);
-
-          this.face.add(
-            flock_direct.multiplyScalar(
-              flock_repel_factor *
-                (1 /
-                  (this.fish.position.distanceTo(fish_list[i].fish.position) +
-                    epsilon))
-            )
-          );
-        } else {
-          //console.log("trying to merge angle");
-          const flock_direct = fish_list[i].face.clone();
-          this.face.add(flock_direct.multiplyScalar(direction_factor));
-        }
-      }
-    }
-    // chase mouse
-
-    const mouse_factor = 0.001;
-    const mouse_pos = new THREE.Vector3(
-      tank_dim.max_z / 2,
-      mouse.y * tank_dim.max_y,
-      -mouse.x * tank_dim.max_x
+    update_object_position(
+      tank_dim,
+      this.fish,
+      this.id,
+      this.step,
+      this.radius,
+      this.face,
+      this.length,
+      fish_list,
+      mouse
     );
-    const mouse_direction = mouse_pos.clone().sub(this.fish.position);
-    this.face.add(mouse_direction.multiplyScalar(mouse_factor));
-
-    // update position and direction
-    this.face.normalize();
-    const next_pos = this.fish.position
-      .clone()
-      .add(this.face.clone().multiplyScalar(this.step));
-    this.fish.lookAt(next_pos);
-    this.fish.position.copy(next_pos);
   }
 
   set_rotation_x(angle) {

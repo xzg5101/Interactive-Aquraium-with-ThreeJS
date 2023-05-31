@@ -35,7 +35,7 @@ const tank_material = new THREE.LineBasicMaterial({ color: 0xffffff });
 const tank_points = tank.get_edges();
 const tank_geo = new THREE.BufferGeometry().setFromPoints(tank_points);
 const tank_line = new THREE.Line(tank_geo, tank_material);
-//tank_line.visible = false;
+tank_line.visible = false;
 scene.add(tank_line);
 const fish_cnt = 10;
 const fish_size = 7;
@@ -76,7 +76,7 @@ function onMouseMove(event) {
   // (-1 to +1) for both components
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  console.log(mouse.x, mouse.y);
+  //console.log(mouse.x, mouse.y);
 }
 
 let fish_list = add_fish(fish_cnt);

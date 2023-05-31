@@ -1,8 +1,32 @@
 {
+  "name": "interactive-aquraium-with-threejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
   "dependencies": {
-    "three": "^0.152.2"
+    "esbuild": "^0.17.19",
+    "nanoid": "^3.3.6",
+    "picocolors": "^1.0.0",
+    "rollup": "^3.23.0",
+    "three": "^0.152.2",
+    "postcss": "^8.4.24",
+    "vite": "^4.3.9",
+    "source-map-js": "^1.0.2"
   },
-  "devDependencies": {
-    "vite": "^4.3.9"
-  }
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xzg5101/Interactive-Aquraium-with-ThreeJS.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xzg5101/Interactive-Aquraium-with-ThreeJS/issues"
+  },
+  "homepage": "https://github.com/xzg5101/Interactive-Aquraium-with-ThreeJS#readme"
 }

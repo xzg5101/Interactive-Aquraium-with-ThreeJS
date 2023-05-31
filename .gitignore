@@ -1,3 +1,8 @@
 
 node_modules
 *.log
+*.cache
+.firebaserc
+dist
+Interactive Aquarium
+firebase.json
