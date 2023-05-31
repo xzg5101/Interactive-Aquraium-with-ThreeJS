@@ -15,16 +15,8 @@ camera.position.set(200, 0, 0);
 //camera.setRotationFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4);
 camera.lookAt(0, 0, 0);
 
-function createRenderer() {
-  const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer();
 
-  // turn on the physically correct lighting model
-  renderer.physicallyCorrectLights = true;
-
-  return renderer;
-}
-
-const renderer = createRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 

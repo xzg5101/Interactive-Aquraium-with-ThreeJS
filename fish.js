@@ -19,7 +19,7 @@ export class Fish {
       Math.random(),
       Math.random()
     ).normalize();
-    console.log(this.id);
+    //console.log(this.id);
     // cross section distribution
     const height_list = [
       0.487, 0.75, 1, 1.2, 1.387, 1.55, 1.688, 1.8, 1.887, 1.95, 1.988, 2,
