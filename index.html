@@ -1,15 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta
+      charset="utf-8"
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>interactive aquarium.js app</title>
     <style>
       body {
         margin: 0;
       }
+      .white-text {
+        color: white;
+      }
+
+      .container {
+        position: relative; /* This establishes a positioning context */
+        width: 300px; /* Define a width to see the effect, adjust accordingly */
+      }
+      .overlay {
+        position: absolute; /* This makes the overlay */
+        top: 0; /* Aligns the overlay to the top of the container */
+        left: 0; /* Aligns the overlay to the left of the container */
+        color: red; /* Just to differentiate from the white text */
+        background-color: rgba(
+          0,
+          0,
+          0,
+          0.5
+        ); /* Semi-transparent black to see overlay effect */
+        padding: 10px; /* Just to give it some space */
+      }
     </style>
   </head>
   <body>
-    <script type="module" src="/main.js"></script>
+    <div class="container">
+      <div class="overlay">
+        <p class="white-text">Press F to feed the fish</p>
+      </div>
+      <script type="module" src="/main2.js"></script>
+    </div>
   </body>
 </html>

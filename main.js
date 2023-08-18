@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Fish } from "./fish.js";
 import { Tank } from "./tank.js";
 import { createLights } from "./createLight.js";
-
+import { Food } from "./food.js";
 // functions
 
 function createRenderer() {
@@ -17,10 +17,17 @@ function add_fish(cnt) {
   for (let i = 0; i < fish_cnt; i++) {
     const color = new THREE.Color(Math.random(), Math.random(), Math.random());
     const fish = new Fish(fish_size, color);
-    scene.add(fish.get_fish());
+    scene.add(fish.get_item());
     fish_list.push(fish);
   }
   return fish_list;
+}
+
+function add_food(tank_dim) {
+  const food = new Food(tank_dim);
+  scene.add(food.get_item());
+  console.log("added food", food.id, food.get_item().position);
+  return food;
 }
 
 function init_mouse() {
@@ -30,10 +37,16 @@ function init_mouse() {
 
 function animate() {
   requestAnimationFrame(animate);
-  for (let i = 0; i < fish_list.length; i++) {
-    fish_list[i].update_animation();
-    fish_list[i].update_position(tank.get_dimensions(), fish_list, mouse);
+
+  for (let i = 0; i < item_list.length; i++) {
+    item_list[i].update_animation();
+    item_list[i].update_position(tank.get_dimensions(), item_list, mouse);
   }
+
+  // for (let i = 0; i < item_list.length; i++) {
+  //   item_list[i].update_position(tank.get_dimensions());
+  // }
+
   renderer.render(scene, camera);
 }
 
@@ -43,6 +56,15 @@ function onMouseMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   //console.log(mouse.x, mouse.y);
+}
+
+function onDocumentKeyDown(event) {
+  var keyCode = event.which;
+  if (keyCode == 70) {
+    console.log("food？");
+    let food = add_food(tank.get_dimensions());
+    //item_list.push(food);
+  }
 }
 
 //set up scene and camera
@@ -55,11 +77,12 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(200, 0, 0);
 camera.lookAt(0, 0, 0);
+f;
 
 const renderer = createRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-
+document.addEventListener("keydown", onDocumentKeyDown, false);
 // setup tank
 const tank = new Tank(150, 150, 250);
 //const tank = new Tank(100, 100, 100);
@@ -75,7 +98,9 @@ const light = createLights();
 
 scene.add(light);
 
-let fish_list = add_fish(fish_cnt);
+let item_list = [];
+item_list = item_list.concat(add_fish(fish_cnt));
+
 //fish_list[0].set_rotation_z(Math.PI / 2);
 //fish_list[0].set_rotation_y(Math.PI / 2);
 

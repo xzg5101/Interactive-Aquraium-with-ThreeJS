@@ -10,70 +10,95 @@ export function random_color() {
 // collision and flocking constants
 const hard_col_factor = 1;
 const flock_repel_factor = 0.00001;
-const flocking_gather_factor = 0.001;
-const direction_factor = 0.001;
+const flocking_gather_factor = 0.00001;
+const direction_factor = 0.0001;
 const epsilon = 0.0000001;
 const wall_factor = 0.5;
 const wall_border_ratio = 0.7;
-const mouse_factor = 0.001;
+const prey_factor = 0.5;
+const mouse_factor = 0;
+const turning_factor = 0.05;
+
+const FoodMinYDist = 10;
+
+export function update_gravity_position(
+  tank_dim,
+  item,
+  id,
+  step,
+  radius,
+  length
+) {
+  if (item.position.y <= tank_dim.min_y + FoodMinYDist) {
+    return;
+  }
+
+  item.position.y -= step;
+}
 
 export function update_object_position(
   tank_dim,
-  fish,
+  item,
   id,
+  i_type,
+  level,
   step,
   radius,
   face,
   length,
-  fish_list,
+  item_list,
   mouse
 ) {
   // collision and flocking variables
-  const flock_inner_bound = length * 2;
-  const flock_outer_bound = length * 5;
+  const flock_inner_bound = length * 3;
+  const flock_outer_bound = length * 6;
+
+  // item to remove
+  const item_id_to_remove = [];
 
   //refect on walls
-  //console.log(fish.position);
+  //console.log(item.position);
   if (
-    fish.position.x > tank_dim.max_x - radius ||
-    fish.position.x < tank_dim.min_x + radius
+    item.position.x > tank_dim.max_x - radius ||
+    item.position.x < tank_dim.min_x + radius
   ) {
     face.reflect(new THREE.Vector3(1, 0, 0));
   }
 
   if (
-    fish.position.y > tank_dim.max_y - radius ||
-    fish.position.y < tank_dim.min_y + radius
+    item.position.y > tank_dim.max_y - radius ||
+    item.position.y < tank_dim.min_y + radius
   ) {
     face.reflect(new THREE.Vector3(0, 1, 0));
   }
 
   if (
-    fish.position.z > tank_dim.max_z - radius ||
-    fish.position.z < tank_dim.min_z + radius
+    item.position.z > tank_dim.max_z - radius ||
+    item.position.z < tank_dim.min_z + radius
   ) {
     face.reflect(new THREE.Vector3(0, 0, 1));
   }
 
+  const newFace = new THREE.Vector3(0, 0, 0);
   // potential from the wall
   const min_dim = Math.min(tank_dim.max_x, tank_dim.max_y, tank_dim.max_z);
   const wall_border = wall_border_ratio * min_dim;
 
-  const x_max_dist = tank_dim.max_x - fish.position.x;
-  const x_min_dist = fish.position.x - tank_dim.min_x;
-  const y_max_dist = tank_dim.max_y - fish.position.y;
-  const y_min_dist = fish.position.y - tank_dim.min_y;
-  const z_max_dist = tank_dim.max_z - fish.position.z;
-  const z_min_dist = fish.position.z - tank_dim.min_z;
+  const x_max_dist = tank_dim.max_x - item.position.x;
+  const x_min_dist = item.position.x - tank_dim.min_x;
+  const y_max_dist = tank_dim.max_y - item.position.y;
+  const y_min_dist = item.position.y - tank_dim.min_y;
+  const z_max_dist = tank_dim.max_z - item.position.z;
+  const z_min_dist = item.position.z - tank_dim.min_z;
 
   if (x_max_dist < wall_border) {
-    face.add(
+    newFace.add(
       new THREE.Vector3(-1, 0, 0).multiplyScalar(
         (1 / (x_max_dist + epsilon)) * wall_factor
       )
     );
   } else if (x_min_dist < wall_border) {
-    face.add(
+    newFace.add(
       new THREE.Vector3(1, 0, 0).multiplyScalar(
         (1 / (x_min_dist + epsilon)) * wall_factor
       )
@@ -81,13 +106,13 @@ export function update_object_position(
   }
 
   if (y_max_dist < wall_border) {
-    face.add(
+    newFace.add(
       new THREE.Vector3(0, -1, 0).multiplyScalar(
         (1 / (y_max_dist + epsilon)) * wall_factor
       )
     );
   } else if (y_min_dist < wall_border) {
-    face.add(
+    newFace.add(
       new THREE.Vector3(0, 1, 0).multiplyScalar(
         (1 / (y_min_dist + epsilon)) * wall_factor
       )
@@ -95,82 +120,114 @@ export function update_object_position(
   }
 
   if (z_max_dist < wall_border) {
-    face.add(
+    newFace.add(
       new THREE.Vector3(0, 0, -1).multiplyScalar(
         (1 / (z_max_dist + epsilon)) * wall_factor
       )
     );
   } else if (z_min_dist < wall_border) {
-    face.add(
+    newFace.add(
       new THREE.Vector3(0, 0, 1).multiplyScalar(
         (1 / (z_min_dist + epsilon)) * wall_factor
       )
     );
   }
 
-  for (let i = 0; i < fish_list.length; i++) {
-    if (fish_list[i].id != id) {
-      //direct collision
-      if (fish.position.distanceTo(fish_list[i].fish.position) < radius) {
-        const col_direct = fish.position
+  // inter action with other item in the tank
+
+  let food_flag = false;
+
+  for (let i = 0; i < item_list.length; i++) {
+    // lower level items are food
+    if (item_list[i].level < level) {
+      if (item.position.distanceTo(item_list[i].item.position) < radius) {
+        item_id_to_remove.push(item_list[i].id);
+      } else {
+        food_flag = true;
+        const pray_vec = item_list[i].item.position.clone().sub(item.position);
+        const pray_direct = pray_vec
           .clone()
-          .sub(fish_list[i].fish.position);
-        face.add(
+          .normalize()
+          .multiplyScalar(1000 / pray_vec.lengthSq());
+        newFace.add(pray_direct.multiplyScalar(prey_factor));
+      }
+    }
+
+    // collide with item in same level
+    if (item_list[i].id != id && item_list[i].level == level) {
+      //direct collision
+      if (item.position.distanceTo(item_list[i].item.position) < radius) {
+        const col_direct = item.position
+          .clone()
+          .sub(item_list[i].item.position);
+        newFace.add(
           col_direct
             .normalize()
             .multiplyScalar(
               hard_col_factor *
                 (1 /
-                  (fish.position.distanceTo(fish_list[i].fish.position) +
+                  (item.position.distanceTo(item_list[i].item.position) +
                     epsilon))
             )
         );
       }
-      //flocking
-      else if (
-        fish.position.distanceTo(fish_list[i].fish.position) > flock_outer_bound
-      ) {
-        //console.log("too far");
-        const flock_direct = fish_list[i].fish.position
-          .clone()
-          .sub(fish.position);
-        face.add(flock_direct.multiplyScalar(flocking_gather_factor));
-      } else if (
-        fish.position.distanceTo(fish_list[i].fish.position) < flock_inner_bound
-      ) {
-        //console.log("too close");
-        const flock_direct = fish.position
-          .clone()
-          .sub(fish_list[i].fish.position);
+      //flocking with item with same type
+      if (item_list[i].type == i_type) {
+        if (
+          item.position.distanceTo(item_list[i].item.position) >
+          flock_outer_bound
+        ) {
+          //console.log("too far");
+          const flock_direct = item_list[i].item.position
+            .clone()
+            .sub(item.position);
+          newFace.add(flock_direct.multiplyScalar(flocking_gather_factor));
+        } else if (
+          item.position.distanceTo(item_list[i].item.position) <
+          flock_inner_bound
+        ) {
+          //console.log("too close");
+          const flock_direct = item.position
+            .clone()
+            .sub(item_list[i].item.position);
 
-        face.add(
-          flock_direct.multiplyScalar(
-            flock_repel_factor *
-              (1 /
-                (fish.position.distanceTo(fish_list[i].fish.position) +
-                  epsilon))
-          )
-        );
-      } else {
-        //console.log("trying to merge angle");
-        const flock_direct = fish_list[i].face.clone();
-        face.add(flock_direct.multiplyScalar(direction_factor));
+          newFace.add(
+            flock_direct.multiplyScalar(
+              flock_repel_factor *
+                (1 /
+                  (item.position.distanceTo(item_list[i].item.position) +
+                    epsilon))
+            )
+          );
+        } else {
+          //console.log("trying to merge angle");
+          const flock_direct = item_list[i].face.clone();
+          newFace.add(flock_direct.multiplyScalar(direction_factor));
+        }
       }
+      // hunt lower level
     }
   }
   // chase mouse
 
-  const mouse_pos = new THREE.Vector3(
-    tank_dim.max_z / 2,
-    mouse.y * tank_dim.max_y,
-    -mouse.x * tank_dim.max_x
-  );
-  const mouse_direction = mouse_pos.clone().sub(fish.position);
-  face.add(mouse_direction.multiplyScalar(mouse_factor));
+  if (!food_flag) {
+    const mouse_pos = new THREE.Vector3(
+      tank_dim.max_z / 2,
+      mouse.y * tank_dim.max_y,
+      -mouse.x * tank_dim.max_x
+    );
+    const mouse_direction = mouse_pos.clone().sub(item.position);
+    newFace.add(mouse_direction.multiplyScalar(mouse_factor));
+  }
 
   // update position and direction
+  newFace.normalize();
+  face = face.add(newFace.multiplyScalar(turning_factor));
   face.normalize();
-  const next_pos = fish.position.clone().add(face.clone().multiplyScalar(step));
-  fish.lookAt(next_pos);
-  fish.position.copy(next_pos);
+  const next_pos = item.position.clone().add(face.clone().multiplyScalar(step));
+  item.lookAt(next_pos);
+  item.position.copy(next_pos);
+
+  //console.log("\n\n\n utile returning", item_id_to_remove);
+  return item_id_to_remove;
 }

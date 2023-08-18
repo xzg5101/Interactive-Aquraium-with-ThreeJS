@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { random_color } from "./utils";
 import { update_object_position } from "./utils";
-export class Fish {
+import { Item } from "./item";
+
+export class Fish extends Item {
   constructor(length, color) {
-    const d1 = new Date();
-    this.id = d1.getTime();
+    super("fish", 1);
     this.scale = 1;
     this.length = length;
     this.color = color;
@@ -36,9 +37,10 @@ export class Fish {
     // slices of fish
     const slice_l = this.length / height_list.length;
     const slice_list = height_list.map((x, idx) => {
-      const material = new THREE.MeshStandardMaterial({
+      const material = new THREE.MeshPhongMaterial({
         color: idx < height_list.length - 2 ? color : fin_color,
       });
+      material.roughness = 1;
       const slice_geo = new THREE.BoxGeometry(
         slice_l * this.scale,
         ((x * length) / 5) * this.scale,
@@ -72,8 +74,8 @@ export class Fish {
     });
     const fish_geo = new THREE.BoxGeometry(1, 1, 1);
 
-    this.fish = new THREE.Mesh(fish_geo);
-    this.fish.material.visible = false;
+    this.item = new THREE.Mesh(fish_geo);
+    this.item.material.visible = false;
 
     const fin_material = new THREE.MeshBasicMaterial({
       color: fin_color,
@@ -117,7 +119,7 @@ export class Fish {
       Math.PI / 2
     );
     slice_list[slice_list.length - 1].color = fin_color;
-    this.fish.add(slice_list[0]);
+    this.item.add(slice_list[0]);
   }
 
   update_animation() {
@@ -133,10 +135,12 @@ export class Fish {
   }
 
   update_position(tank_dim, fish_list, mouse) {
-    update_object_position(
+    return update_object_position(
       tank_dim,
-      this.fish,
+      this.item,
       this.id,
+      this.type,
+      this.level,
       this.step,
       this.radius,
       this.face,
@@ -147,18 +151,18 @@ export class Fish {
   }
 
   set_rotation_x(angle) {
-    this.fish.rotation.x += angle;
+    this.item.rotation.x += angle;
   }
 
   set_rotation_y(angle) {
-    this.fish.rotation.y += angle;
+    this.item.rotation.y += angle;
   }
 
   set_rotation_z(angle) {
-    this.fish.rotation.z += angle;
+    this.item.rotation.z += angle;
   }
 
-  get_fish() {
-    return this.fish;
+  get_item() {
+    return this.item;
   }
 }
